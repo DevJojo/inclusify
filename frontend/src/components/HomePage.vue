@@ -1,27 +1,32 @@
 <template>
   <div class="container">
-    <h1>Inclusify</h1>
+    
+
+    <h1>Challenge your prompt</h1>
+    
     <textarea 
       v-model="inputText" 
       placeholder="Enter your text here..." 
-      rows="10"
+      rows="10" 
+      class="input-field"
     ></textarea>
 
-    <button @click="analyzeText">Analyze</button>
+    <button class="analyze-button" @click="analyzeMyText">Analyze</button>
 
-    <div v-if="analyzedText">
-      <h2>Analyzed Text:</h2>
-      <div v-html="highlightedText"></div> 
+    <div v-if="loading" class="overlay">
+      <div class="spinner"></div> 
     </div>
+    <div v-else>
+      <div v-if="analyzedText" class="result-container">
+        <h2>Analyzed Text:</h2>
+        <div v-html="highlightedText" class="highlighted-text"></div> 
+      </div>
 
-    <div v-if="correctedText">
-      <h2>Corrected Text:</h2>
-      <textarea 
-        v-model="correctedText" 
-        rows="10"
-        readonly
-      ></textarea>
-    </div>
+      <div v-if="correctedText" class="result-container">
+        <h2>Corrected Text:</h2>
+        <div v-html="correctedText" class="corrected-text"></div> 
+      </div>
+  </div>
   </div>
 </template>
 
@@ -34,39 +39,52 @@ export default {
       inputText: '',
       analyzedText: '',
       correctedText: '',
+      loading: false,
     };
   },
   methods: {
-    async analyzeText() {
+    async analyzeMyText() {
+      this.loading = true;
       try {
-        // 1. Send the text to Gemini API for analysis
-        const response = await axios.post('/api/analyze', { text: this.inputText }); 
+       
+        // 1. Construct the prompt for the Gemini API
+        const API_KEY = '1236'
+        const prompt = this.inputText
+        this.analyzeText = this.inputText
+
+        // 2. Send the prompt to the Gemini API
+        const response = await axios.post('http://127.0.0.1:5000/claude/analyze', { prompt: prompt }, {
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY }
+        })
+
+        console.log(response.data)
         const analyzedResult = response.data; 
 
-        // 2. Highlight problematic areas in the original text
-        this.analyzedText = this.highlightBias(this.inputText, analyzedResult.bias_locations);
-
-        // 3. Get the corrected text from Gemini API
-        const correctResponse = await axios.post('/api/correct', { text: this.inputText });
-        this.correctedText = correctResponse.data.corrected_text;
+        // 3. Highlight problematic areas in the original text
+        this.highlightBias(this.inputText, analyzedResult.biased_parts);
+        // 4. Get the corrected text from the response
+        this.correctedText = analyzedResult.corrected_text;
 
       } catch (error) {
+        this.loading = false
         console.error('Error analyzing text:', error);
         this.analyzedText = 'Error analyzing text.';
+      } finally {
+        this.loading = false; 
       }
     },
-    highlightBias(text, biasLocations) {
-      let highlightedText = '';
-      let lastIndex = 0;
+    highlightBias(text, keywords) {
+      let highlightedText = text;
 
-      biasLocations.forEach((location) => {
-        highlightedText += text.substring(lastIndex, location.start);
-        highlightedText += `<span style="color:red;">${text.substring(location.start, location.end)}</span>`;
-        lastIndex = location.end;
+      keywords.forEach(keyword => {
+        const regex = new RegExp(`(${keyword})`, 'gi'); 
+        highlightedText = highlightedText.replace(regex, `<span style="color: red;">$1</span>`);
       });
 
-      highlightedText += text.substring(lastIndex);
-      return highlightedText;
+      this.highlightedText = highlightedText;
+      this.analyzedText = highlightedText;
     },
   },
 };
@@ -74,8 +92,58 @@ export default {
 
 <style>
 .container {
-  max-width: 800px;
+  max-width: 80%;
   margin: 0 auto;
   padding: 20px;
+}
+
+.input-field {
+  font-size: 10pt;
+  width: 80%; 
+  margin-bottom: 10px; 
+  padding: 10px;
+}
+
+.analyze-button {
+  width: 80%; 
+  padding: 10px;
+}
+
+.result-container {
+  background-color: #f0f0f0; 
+  margin: auto 10%;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.highlighted-text {
+  white-space: pre-wrap; 
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent gray */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Ensure it's on top */
+}
+
+.spinner {
+  border: 4px solid #f3f3f3; 
+  border-top: 4px solid #3498db; 
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
+  <img alt="Inclusify logo" src="./assets/logo_inclusify.png" width="600em">
   <HomePage />
 </template>
 

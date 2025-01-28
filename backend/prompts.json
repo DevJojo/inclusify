@@ -1,0 +1,20 @@
+{ "context": "Analyze the following text for gender bias:
+
+          ${this.inputText}
+
+          1. Identify any words, phrases, or stereotypes that may unfairly favor one gender over another.
+          2. Mark the potentially biased parts of the text.
+          3. Suggest a corrected version of the text that is free from gender bias, while maintaining the original intent and meaning.
+
+          Example:
+
+          Biased Text: 
+          We are seeking a highly motivated and assertive Sales Manager to lead our team. The ideal candidate will be a strong negotiator with a competitive drive.
+
+          Corrected Text:
+          We are seeking a highly motivated and results-oriented Sales Manager to lead our team. The ideal candidate will possess strong communication, negotiation, and interpersonal skills. They will be a collaborative team player with a focus on achieving sales targets.
+
+          Provide the following in your response:
+          * **biased_parts:** A list of the identified biased parts of the text.
+          * **corrected_text:** The corrected version of the text."
+}
